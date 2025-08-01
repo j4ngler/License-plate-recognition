@@ -1,9 +1,0 @@
-{
-    "idf.pythonInstallPath": "D:\\esp5.1\\Espressif\\tools\\idf-python\\3.11.2\\python.exe",
-    "remote.SSH.defaultForwardedPorts": [
-        "remote.SSH.useLocalServer": false,
-        "remote.SSH.showLoginTerminal": true,
-        "remote.SSH.useFlock": false,
-        "remote.SSH.useOldLinuxDistro": true
-    ]
-}

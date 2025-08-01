@@ -1,0 +1,61 @@
+# =====================
+# Virtual environments
+# =====================
+venv/
+.venv/
+venv37/
+yolov5/venv/
+yolov5/.venv/
+
+# =====================
+# PyTorch / Tensorflow big binaries & cache
+# =====================
+*.dll
+*.lib
+*.pyd
+*.so
+*.dylib
+*.a
+
+# =====================
+# Python cache & build
+# =====================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+build/
+dist/
+
+# =====================
+# Jupyter Notebook checkpoints
+# =====================
+.ipynb_checkpoints/
+
+# =====================
+# IDE / Editor
+# =====================
+.vscode/
+.idea/
+
+# =====================
+# Logs & temp files
+# =====================
+*.log
+*.tmp
+
+# =====================
+# Model weights (nếu có)
+# =====================
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.pb
+
+# =====================
+# Dataset lớn (nếu bạn dùng yolov5)
+# =====================
+data/
+datasets/

@@ -55,7 +55,8 @@ dist/
 *.pb
 
 # =====================
-# Dataset lớn (nếu bạn dùng yolov5)
+# Data
 # =====================
-data/
-datasets/
+app/data/
+output/
+tmp/

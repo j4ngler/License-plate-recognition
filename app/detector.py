@@ -1,9 +1,10 @@
-import datetime, os, logging
+import datetime, os, logging, queue
 import function.helper as helper
 import function.utils_rotate as utils_rotate
 from .utils import save_image, ensure_dir
 from .config import IMG_DIR
-import torch, re
+import torch, re, cv2
+from .mqtt_client import publish_plate
 
 log = logging.getLogger("detector")
 
@@ -31,22 +32,35 @@ def detect_worker(stop_event, frame_queue, ocr_queue):
             continue
 
         for plate in list_plates:
-            try:
-                x1, y1, x2, y2 = map(int, plate[:4])
-                crop_img = frame[y1:y2, x1:x2]
-                if not ocr_queue.full():
-                    ocr_queue.put(crop_img)
-            except Exception as e:
-                log.warning(f"[DETECT] Crop lỗi: {e}")
-                continue
+            x1, y1, x2, y2 = map(int, plate[:4])
+            crop_img = frame[y1:y2, x1:x2]
+            if crop_img.size > 0:
+                try:
+                    ocr_queue.put((crop_img.copy(), (x1, y1)), timeout=1)
+                except queue.Full:
+                    pass
 
+            # Vẽ khung detect để debug (nếu cần)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
+        # Show preview
+        cv2.imshow("Detect", frame)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            stop_event.set()
+            break
+
+        frame_queue.task_done()
 
 def ocr_worker(stop_event, ocr_queue):
-    """Worker OCR biển số"""
+    """Worker OCR biển số (chỉ lưu 1 ảnh mới nhất khi cùng biển số)"""
+    last_plate = None
+    same_count = 0
+    MAX_COUNT = 3  # detect tối đa 3 ảnh liên tiếp trước khi lưu
+
     while not stop_event.is_set():
         try:
-            crop_img = ocr_queue.get(timeout=1)
-        except:
+            crop_img, _ = ocr_queue.get(timeout=1)
+        except queue.Empty:
             continue
 
         lp = ""
@@ -60,8 +74,23 @@ def ocr_worker(stop_event, ocr_queue):
                 break
 
         if lp != "unknown":
-            ts = datetime.datetime.now()
-            day_dir = os.path.join(IMG_DIR, ts.strftime("%Y-%m-%d"))
-            ensure_dir(day_dir)
-            img_path = save_image(crop_img, day_dir, f"{ts.strftime('%H%M%S')}_{lp}.jpg")
-            log.info(f"[{ts}] OCR: {lp} -> saved {img_path}")
+            # Nếu là biển số mới → reset counter
+            if lp != last_plate:
+                last_plate = lp
+                same_count = 1
+            else:
+                same_count += 1
+
+            # Chỉ lưu khi đủ 3 lần hoặc khi biển số mới xuất hiện
+            if same_count >= MAX_COUNT:
+                ts = datetime.datetime.now()
+                day_dir = os.path.join(IMG_DIR, ts.strftime("%Y-%m-%d"))
+                ensure_dir(day_dir)
+                img_path = save_image(crop_img, day_dir, f"{ts.strftime('%H%M%S')}_{lp}.jpg")
+                log.info(f"[{ts}] OCR: {lp} -> saved {img_path}")
+                
+                 # Gửi MQTT qua hàm có sẵn
+                publish_plate(lp, ts.isoformat())
+                log.info(f"[MQTT] Sent: {lp}")
+
+                same_count = 0  # reset để tránh lưu liên tục

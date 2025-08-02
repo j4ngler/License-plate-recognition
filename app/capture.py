@@ -1,5 +1,6 @@
 import cv2, time, logging
 from .config import RTSP_URL
+from .config import USE_WEBCAM, WEBCAM_ID
 
 log = logging.getLogger("capture")
 
@@ -11,11 +12,15 @@ def capture_worker(stop_event, frame_queue):
         nonlocal cap
         if cap:
             cap.release()
-        cap = cv2.VideoCapture(RTSP_URL)
-        if not cap.isOpened():
-            log.error(f"Cannot open RTSP {RTSP_URL}, retrying in 5s...")
-            return False
-        log.info("RTSP opened.")
+        if USE_WEBCAM:
+            cap = cv2.VideoCapture(WEBCAM_ID)
+            log.info(f"Webcam opened (device {WEBCAM_ID}).")
+        else:
+            cap = cv2.VideoCapture(RTSP_URL)
+            if not cap.isOpened():
+                log.error(f"Cannot open RTSP {RTSP_URL}, retrying in 5s...")
+                return False
+            log.info("RTSP opened.")
         return True
 
     # Kết nối ban đầu

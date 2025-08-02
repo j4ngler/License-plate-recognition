@@ -1,4 +1,4 @@
-import threading, time, logging, queue
+import threading, time, logging, queue, traceback
 from .capture import capture_worker
 from .detector import detect_worker, ocr_worker
 from .db import init_schema
@@ -8,8 +8,9 @@ from .config import IMG_DIR, KEEP_DAYS
 log = logging.getLogger("scheduler")
 log.setLevel(logging.INFO)
 
-frame_queue = queue.Queue(maxsize=5)   # Frame từ camera
-ocr_queue = queue.Queue(maxsize=10)    # Crop biển số từ detect
+frame_queue = queue.Queue(maxsize=10)   # Frame từ camera
+plate_queue = queue.Queue(maxsize=20)
+ocr_queue = queue.Queue(maxsize=30)    # Crop biển số từ detect
 
 stop_event = threading.Event()
 
@@ -19,6 +20,15 @@ def _cleanup_loop():
     while not stop_event.is_set():
         cleanup_old(IMG_DIR, KEEP_DAYS)
         time.sleep(3600 * 12)
+
+def save_worker():
+    while not stop_event.is_set():
+        try:
+            target(**args)
+        except:
+            log.error(f"[Worker Crash] {target.__name__}: {e}")
+            log.error(traceback.format_exc())
+            time.sleep(1)
 
 def run():
     init_schema()

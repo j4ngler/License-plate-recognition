@@ -4,6 +4,10 @@
 
 import os
 
+# ==== CAMERA CONFIG ====
+USE_WEBCAM = os.getenv("USE_WEBCAM", "true").lower() == "true"
+WEBCAM_ID    = int(os.getenv("WEBCAM_ID", "1"))
+
 # Camera & xử lý
 RTSP_URL          = os.getenv("RTSP_URL", "rtsp://admin:UIZCHI@192.168.100.98:554/cam/realmonitor?channel=1&subtype=1")
 DETECT_EVERY_SEC  = int(os.getenv("DETECT_EVERY_SEC", "5"))

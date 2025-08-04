@@ -53,13 +53,13 @@ def get_recent_plates(limit: int = 100) -> List[Dict]:
     return rows
 
 
-def save_plate(plate: str, img_path: str, ts: datetime.datetime) -> None:
+def save_plate(plate: str, img_path: str, ts: datetime.datetime, vehicle_type: str) -> None:
     conn = _conn()
     cur = conn.cursor()
     cur.execute(
         "INSERT INTO plates (plate, ts, img_path) VALUES (%s, %s, %s)",
-        (plate, ts, img_path),
+        (plate, ts, img_path, vehicle_type),
     )
     cur.close()
     conn.close()
-    log.debug("Saved plate %s – %s", plate, img_path)
+    log.debug("Saved plate %s – %s", plate, img_path, vehice_type)

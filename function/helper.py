@@ -1,4 +1,4 @@
-import math
+import math, re
 
 # license plate type classification helper function
 def linear_equation(x1, y1, x2, y2):
@@ -62,3 +62,20 @@ def read_plate(yolo_license_plate, im):
         for l in sorted(center_list, key = lambda x: x[0]):
             license_plate += str(l[2])
     return license_plate
+    
+def classify_vehicle(lp: str, bbox=None) -> str:
+    """
+    Phân loại ô tô / xe máy dựa trên cấu trúc biển số.
+    """
+    if not lp:
+        return "unknown"
+
+    clean = lp.replace("-", "").upper()
+    num_len = sum(c.isdigit() for c in clean)
+
+    # Ô tô: 1 chữ cái sau mã tỉnh, 5 chữ số
+    # Xe máy: 1-2 chữ cái sau mã tỉnh, 4-5 chữ số
+    if re.match(r'^\d{2}[A-Z]\d{5}$', clean):
+        return "car"
+    else:
+        return "bike"

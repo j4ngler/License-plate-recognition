@@ -34,15 +34,27 @@ def run():
     init_schema()
 
     # Start threads
-    threading.Thread(target=capture_worker, args=(stop_event, frame_queue), daemon=True).start()
-    threading.Thread(target=detect_worker, args=(stop_event, frame_queue, ocr_queue), daemon=True).start()
-    threading.Thread(target=ocr_worker, args=(stop_event, ocr_queue), daemon=True).start()
-    threading.Thread(target=_cleanup_loop, daemon=True).start()
+
+    threads = [
+        threading.Thread(target=capture_worker, args=(stop_event, frame_queue), daemon=True),
+        threading.Thread(target=detect_worker, args=(stop_event, frame_queue, ocr_queue), daemon=True),
+        threading.Thread(target=ocr_worker, args=(stop_event, ocr_queue), daemon=True),
+        threading.Thread(target=_cleanup_loop, daemon=True)
+    ]
+    
+    for t in threads:
+        t.start()
 
     log.info("Backend AI READY – press Ctrl+C to stop.")
+
     try:
-        while True:
+        while not stop_event.is_set():
             time.sleep(1)
     except KeyboardInterrupt:
+        log.info("Stopping backend by Ctrl+C ...")
         stop_event.set()
-        log.info("Stopping backend...")
+    
+    for t in threads:
+        t.join(timeout=2)
+
+    log.info("Backend stopped cleanly.")
